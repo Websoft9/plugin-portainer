@@ -56,7 +56,7 @@ function App() {
       });
   };
 
-  function handleHashChange() {
+  const handleHashChange = () => {
     var newHash = window.location.hash;
     if (newHash.includes("/portainer/#!/")) {
       var index = newHash.indexOf("#");
