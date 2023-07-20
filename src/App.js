@@ -36,8 +36,8 @@ function App() {
               password: userPwd,
             });
             if (authResponse.status === 200) {
-              let jwt = "\"" + authResponse.data.jwt + "\"";
-              window.localStorage.setItem('portainer\.JWT', jwt);
+              portainer_jwt = "\"" + authResponse.data.jwt + "\"";
+              window.localStorage.setItem('portainer\.JWT', portainer_jwt);
             } else {
               setShowAlert(true);
               setAlertMessage("Auth Portainer Error.")
@@ -51,7 +51,6 @@ function App() {
         var index = newHash.indexOf("#");
         if (index > -1) {
           var content = newHash.slice(index + 1);
-          setIframeKey(Math.random());
           setIframeSrc(baseURL + content + "?portainer_jwt=" + portainer_jwt.replace(/"/g, ''));
         }
       }
@@ -61,7 +60,7 @@ function App() {
     }
     catch (error) {
       setShowAlert(true);
-      setAlertMessage("Call Portainer Page Error.")
+      setAlertMessage("Call Portainer Page Error.");
     }
   }
 
@@ -88,7 +87,7 @@ function App() {
 
   return (
     <>
-      {iframeSrc ? (
+      {iframeKey && iframeSrc ? (
         <div class="myPortainer">
           <iframe key={iframeKey} title="portainer" src={iframeSrc} />
         </div>
