@@ -86,6 +86,6 @@ jobs:
           token: ${{ secrets.ZJ_ADMIN_TOKEN }}
           branch: update-portainer-version-${{ github.run_number }}
           delete-branch: true
-          commit-message: Update PORTAINER Version
+          commit-message: Update Portainer Version
           title: "Portainer Releases New Version : ${{ steps.update_data.outputs.PLUGIN_VERSION }}"
           body: "Update the Portainer value in version.json to: ${{ steps.update_data.outputs.PLUGIN_VERSION }}"
