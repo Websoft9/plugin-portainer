@@ -4,3 +4,4 @@ node_modules
 build
 container
 portainer-*.zip
+mk.sh
