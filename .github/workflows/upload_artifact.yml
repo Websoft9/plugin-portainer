@@ -40,6 +40,11 @@ jobs:
           jq -r --arg version "$version" '.version = $version' public/manifest.json > manifest.json.tmp
           mv manifest.json.tmp public/manifest.json
           
+      - name: Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: Build Plugin and Upload Artifact
+          
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
@@ -84,8 +89,3 @@ jobs:
           commit-message: Update PORTAINER Version
           title: "Portainer Releases New Version : ${{ steps.update_data.outputs.PLUGIN_VERSION }}"
           body: "Update the Portainer value in version.json to: ${{ steps.update_data.outputs.PLUGIN_VERSION }}"
-
-      - name: Commit and push changes
-        uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: Build Plugin and Upload Artifact
