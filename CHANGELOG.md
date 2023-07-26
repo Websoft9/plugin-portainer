@@ -1,1 +1,3 @@
-
+## 0.0.1 release on 2023-07-26
+1. Welcome to Portainer
+2. Portainer initial version
