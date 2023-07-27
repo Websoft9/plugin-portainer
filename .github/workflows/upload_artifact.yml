@@ -57,6 +57,8 @@ jobs:
       - name: Create Zip Archive
         run: |
           mv build container
+          cp CHANGELOG.md container
+          cp portainer.json container
           zip -r portainer-${{ steps.update_data.outputs.PLUGIN_VERSION }}.zip container/
 
       - name: Upload To Azure Blob
