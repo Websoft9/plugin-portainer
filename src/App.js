@@ -20,7 +20,7 @@ function App() {
   //验证JWT是否过期
   function isTokenExpired(token) {
     const decodedToken = jwt_decode(token);
-    const currentTime = Date.now() / 1000;
+    const currentTime = Math.floor(Date.now() / 1000);
     return decodedToken.exp < currentTime;
   }
 
