@@ -1,3 +1,2 @@
-## 0.0.1 release on 2023-07-27
-1. Welcome to Portainer
-2. Portainer initial version
+## 0.0.2 release on 2023-08-03
+1. Added expiration verification for JWT in Portainer
