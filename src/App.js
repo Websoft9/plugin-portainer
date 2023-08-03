@@ -1,6 +1,7 @@
 import axios from 'axios';
 import "bootstrap/dist/css/bootstrap.min.css";
 import cockpit from 'cockpit';
+import jwt_decode from 'jwt-decode';
 import { useEffect, useState } from "react";
 import { Alert } from 'react-bootstrap';
 import Spinner from 'react-bootstrap/Spinner';
@@ -12,39 +13,51 @@ function App() {
   const [iframeKey, setIframeKey] = useState(Math.random());
   const [alertMessage, setAlertMessage] = useState("");
 
-  var baseURL;
+  const host = window.location.host;
+  const baseURL = window.location.protocol + "//" + (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(host) ? host.split(":")[0] : host);
+  let portainer_jwt = window.localStorage.getItem("portainer.JWT"); //获取portainer.JWT的值
+
+  //验证JWT是否过期
+  function isTokenExpired(token) {
+    const decodedToken = jwt_decode(token);
+    const currentTime = Date.now() / 1000;
+    return decodedToken.exp < currentTime;
+  }
+
+  //获取Portainer JWT
+  const getJwt = async () => {
+    let response = await cockpit.http({ "address": "websoft9-appmanage", "port": 5000 }).get("/AppSearchUsers", { "plugin_name": "portainer" });
+    response = JSON.parse(response);
+    if (response.ResponseData) {
+      var userName = response.ResponseData.user?.user_name;
+      var userPwd = response.ResponseData.user?.password;
+
+      const authResponse = await axios.post(baseURL + "/portainer/api/auth", {
+        username: userName,
+        password: userPwd,
+      });
+      if (authResponse.status === 200) {
+        portainer_jwt = "\"" + authResponse.data.jwt + "\"";
+        window.localStorage.setItem('portainer\.JWT', portainer_jwt);
+      } else {
+        setShowAlert(true);
+        setAlertMessage("Request Portainer JWT Failed.");
+      }
+    }
+  }
 
   const getData = async () => {
-    let protocol = window.location.protocol;
-    let host = window.location.host;
-    let portainer_jwt = window.localStorage.getItem("portainer.JWT");
-    baseURL = protocol + "//" + (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(host) ? host.split(":")[0] : host);
-
     try {
-      if (!portainer_jwt) {
-        let data = await cockpit.spawn(["docker", "inspect", "-f", "{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}", "websoft9-appmanage"]);
-        let IP = data.trim();
-        if (IP) {
-          let response = await cockpit.http({ "address": IP, "port": 5000 }).get("/AppSearchUsers", { "plugin_name": "portainer" });
-          response = JSON.parse(response);
-          if (response.ResponseData) {
-            var userName = response.ResponseData.user?.user_name;
-            var userPwd = response.ResponseData.user?.password;
-
-            const authResponse = await axios.post(baseURL + "/portainer/api/auth", {
-              username: userName,
-              password: userPwd,
-            });
-            if (authResponse.status === 200) {
-              portainer_jwt = "\"" + authResponse.data.jwt + "\"";
-              window.localStorage.setItem('portainer\.JWT', portainer_jwt);
-            } else {
-              setShowAlert(true);
-              setAlertMessage("Auth Portainer Error.")
-            }
-          }
+      if (!portainer_jwt) { //如果不存在，通过API获取JWT
+        await getJwt();
+      }
+      else { //如果存在，就验证是否已经过期
+        const isExpired = isTokenExpired(portainer_jwt);
+        if (isExpired) { //如果已经过期，重新生成JWT
+          await getJwt();
         }
       }
+
       setIframeKey(Math.random());
       var newHash = window.location.hash;
       if (newHash.includes("/portainer/#!/")) {

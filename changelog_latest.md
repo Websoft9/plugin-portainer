@@ -1,2 +1,1 @@
-1. Welcome to Portainer
-2. Portainer initial version
+1. Added expiration verification for JWT in Portainer
