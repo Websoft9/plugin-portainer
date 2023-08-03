@@ -62,13 +62,16 @@ jobs:
           cp -r docs container
           rsync -av --exclude='changelog_latest.md' *.md container/
           zip -r portainer-${{ steps.update_data.outputs.PLUGIN_VERSION }}.zip container/
+          cp CHANGELOG.md artifacts/
+          cp settings.json artifacts/
+          mv portainer-${{ steps.update_data.outputs.PLUGIN_VERSION }}.zip artifacts/
 
       - name: Upload To Azure Blob
         uses: LanceMcCarthy/Action-AzureBlobUpload@v2
         with:
           connection_string: ${{ secrets.AZURE_STORAGE_ARTIFACT }}
           container_name: release
-          source_folder: portainer-${{ steps.update_data.outputs.PLUGIN_VERSION }}.zip
+          source_folder: artifacts/
           destination_folder: ./websoft9/plugin/portainer
           delete_if_exists: true
           fail_if_source_empty: true
