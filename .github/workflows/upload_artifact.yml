@@ -56,6 +56,7 @@ jobs:
 
       - name: Create Zip Archive
         run: |
+          mkdir artifacts
           mv build container
           cp CHANGELOG.md container
           cp portainer.json container
