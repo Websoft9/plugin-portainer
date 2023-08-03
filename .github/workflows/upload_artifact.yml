@@ -63,7 +63,7 @@ jobs:
           rsync -av --exclude='changelog_latest.md' *.md container/
           zip -r portainer-${{ steps.update_data.outputs.PLUGIN_VERSION }}.zip container/
           cp CHANGELOG.md artifacts/
-          cp settings.json artifacts/
+          cp portainer.json artifacts/
           mv portainer-${{ steps.update_data.outputs.PLUGIN_VERSION }}.zip artifacts/
 
       - name: Upload To Azure Blob
