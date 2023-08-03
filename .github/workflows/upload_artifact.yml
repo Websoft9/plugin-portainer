@@ -60,7 +60,7 @@ jobs:
           cp CHANGELOG.md container
           cp portainer.json container
           cp -r docs container
-          cp --exclude='changelog_latest.md' *.md container/
+          rsync -av --exclude='changelog_latest.md' *.md container/
           zip -r portainer-${{ steps.update_data.outputs.PLUGIN_VERSION }}.zip container/
 
       - name: Upload To Azure Blob
