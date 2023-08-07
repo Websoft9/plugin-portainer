@@ -15,7 +15,8 @@ function App() {
 
   const host = window.location.host;
   const baseURL = window.location.protocol + "//" + (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(host) ? host.split(":")[0] : host);
-  let portainer_jwt = window.localStorage.getItem("portainer.JWT"); //获取portainer.JWT的值
+  //let portainer_jwt = window.localStorage.getItem("portainer.JWT"); //获取portainer.JWT的值
+  let portainer_jwt = window.sessionStorage.getItem("portainerJWT"); //获取portainerJWT的值
 
   //验证JWT是否过期
   function isTokenExpired(token) {
@@ -37,8 +38,10 @@ function App() {
         password: userPwd,
       });
       if (authResponse.status === 200) {
-        portainer_jwt = "\"" + authResponse.data.jwt + "\"";
-        window.localStorage.setItem('portainer\.JWT', portainer_jwt);
+        //portainer_jwt = "\"" + authResponse.data.jwt + "\"";
+        portainer_jwt = authResponse.data.jwt;
+        //window.localStorage.setItem('portainer\.JWT', portainer_jwt);
+        window.sessionStorage.setItem('portainerJWT', portainer_jwt); //存储数据
       } else {
         setShowAlert(true);
         setAlertMessage("Request Portainer JWT Failed.");
@@ -64,11 +67,11 @@ function App() {
         var index = newHash.indexOf("#");
         if (index > -1) {
           var content = newHash.slice(index + 1);
-          setIframeSrc(baseURL + content + "?portainer_jwt=" + portainer_jwt.replace(/"/g, ''));
+          setIframeSrc(baseURL + content + "?portainer_jwt=" + portainer_jwt);
         }
       }
       else {
-        setIframeSrc(baseURL + "/portainer?portainer_jwt=" + portainer_jwt.replace(/"/g, ''));
+        setIframeSrc(baseURL + "/portainer?portainer_jwt=" + portainer_jwt);
       }
     }
     catch (error) {
@@ -84,7 +87,7 @@ function App() {
       if (index > -1) {
         var content = newHash.slice(index + 1);
         setIframeKey(Math.random());
-        setIframeSrc(baseURL + content);
+        setIframeSrc(baseURL + content + "?portainer_jwt=" + portainer_jwt);
       }
     }
   }

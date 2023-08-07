@@ -1,0 +1,90 @@
+name: Build Plugin And Upload Artifact To Azure Blob for dev
+
+on: workflow_dispatch
+
+jobs:
+  Dev_Build_Plugin_And_Upload_Artifact:
+    runs-on: ubuntu-latest
+    env:
+      CI: false
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 20.2.0
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build
+        run: yarn build
+        
+      - name: Update CHANGELOG.md and public/manifest.json
+        id: update_data
+        run: |
+          version=$(jq -r '.Version' portainer.json)
+          echo "PLUGIN_VERSION=$version" >> $GITHUB_OUTPUT
+          
+          changelog=$(cat changelog_latest.md)
+          echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT 
+          echo "$changelog" >> $GITHUB_OUTPUT 
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          current_date=$(date +%Y-%m-%d)
+          printf "## $version release on $current_date\n$changelog\n$(cat CHANGELOG.md)" > temp.txt
+          mv temp.txt CHANGELOG.md
+      
+          jq -r --arg version "$version" '.version = $version' public/manifest.json > manifest.json.tmp
+          mv manifest.json.tmp public/manifest.json
+          
+      - name: Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: Build Plugin and Upload Artifact
+          
+      - name: Create Zip Archive
+        run: |
+          mkdir artifacts
+          mv build container
+          cp CHANGELOG.md container
+          cp portainer.json container
+          cp -r docs container
+          rsync -av --exclude='changelog_latest.md' *.md container/
+          zip -r portainer-${{ steps.update_data.outputs.PLUGIN_VERSION }}.zip container/
+          cp CHANGELOG.md artifacts/
+          cp portainer.json artifacts/
+          mv portainer-${{ steps.update_data.outputs.PLUGIN_VERSION }}.zip artifacts/
+
+      - name: Upload To Azure Blob
+        uses: LanceMcCarthy/Action-AzureBlobUpload@v2
+        with:
+          connection_string: ${{ secrets.AZURE_STORAGE_ARTIFACT }}
+          container_name: dev
+          source_folder: artifacts/
+          destination_folder: ./websoft9/plugin/portainer
+          delete_if_exists: true
+          fail_if_source_empty: true
+      
+      - name: Checkout websoft9
+        uses: actions/checkout@v2
+        with:
+          repository: Websoft9/websoft9
+          ref: main
+      
+      - name: Update Version in websoft9/version.json
+        run: |
+          jq -r --arg version "${{ steps.update_data.outputs.PLUGIN_VERSION }}" '.PLUGINS.PORTAINER = $version' version.json > version.json.tmp
+          mv version.json.tmp version.json
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.ZJ_ADMIN_TOKEN }}
+          branch: update-portainer-version-${{ github.run_number }}
+          delete-branch: true
+          commit-message: Update Portainer Version
+          title: "Portainer Releases New Version : ${{ steps.update_data.outputs.PLUGIN_VERSION }}"
+          body: "Update the Portainer value in version.json to: ${{ steps.update_data.outputs.PLUGIN_VERSION }}"
