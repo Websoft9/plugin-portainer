@@ -1,9 +1,9 @@
-name: Release New Version for Official
+name: Build New Version for Release
 
 on: workflow_dispatch
 
 jobs:
-  Release_New_Version_for_Official:
+  Build_New_Version_for_Release:
     runs-on: ubuntu-latest
     env:
       CI: false
