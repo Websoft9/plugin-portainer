@@ -1,9 +1,9 @@
-name: Build Plugin And Upload Artifact To Azure Blob
+name: Release New Version for Official
 
 on: workflow_dispatch
 
 jobs:
-  Build_Plugin_And_Upload_Artifact:
+  Release_New_Version_for_Official:
     runs-on: ubuntu-latest
     env:
       CI: false
@@ -44,7 +44,7 @@ jobs:
         if: success()
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
-          commit_message: Build Plugin and Upload Artifact
+          commit_message: Build Plugin and Upload Artifact for Release
           
       - name: Create Release
         if: success()

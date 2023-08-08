@@ -1,9 +1,9 @@
-name: Build Plugin And Upload Artifact To Azure Blob for dev
+name: Release New Version for Dev
 
 on: workflow_dispatch
 
 jobs:
-  Dev_Build_Plugin_And_Upload_Artifact:
+  Release_New_Version_for_Dev:
     runs-on: ubuntu-latest
     env:
       CI: false
