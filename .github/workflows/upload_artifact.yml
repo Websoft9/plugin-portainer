@@ -41,11 +41,13 @@ jobs:
           mv manifest.json.tmp public/manifest.json
           
       - name: Commit and push changes
+        if: success()
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: Build Plugin and Upload Artifact
           
       - name: Create Release
+        if: success()
         uses: softprops/action-gh-release@v1
         with:
           files: /* 
@@ -55,6 +57,7 @@ jobs:
           prerelease: true
 
       - name: Create Zip Archive
+        if: success()
         run: |
           mkdir artifacts
           mv build container
@@ -68,6 +71,7 @@ jobs:
           mv portainer-${{ steps.update_data.outputs.PLUGIN_VERSION }}.zip artifacts/
 
       - name: Upload To Azure Blob
+        if: success()
         uses: LanceMcCarthy/Action-AzureBlobUpload@v2
         with:
           connection_string: ${{ secrets.AZURE_STORAGE_ARTIFACT }}
@@ -76,24 +80,3 @@ jobs:
           destination_folder: ./websoft9/plugin/portainer
           delete_if_exists: true
           fail_if_source_empty: true
-      
-      - name: Checkout websoft9
-        uses: actions/checkout@v2
-        with:
-          repository: Websoft9/websoft9
-          ref: main
-      
-      - name: Update Version in websoft9/version.json
-        run: |
-          jq -r --arg version "${{ steps.update_data.outputs.PLUGIN_VERSION }}" '.PLUGINS.PORTAINER = $version' version.json > version.json.tmp
-          mv version.json.tmp version.json
-
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.ZJ_ADMIN_TOKEN }}
-          branch: update-portainer-version-${{ github.run_number }}
-          delete-branch: true
-          commit-message: Update Portainer Version
-          title: "Portainer Releases New Version : ${{ steps.update_data.outputs.PLUGIN_VERSION }}"
-          body: "Update the Portainer value in version.json to: ${{ steps.update_data.outputs.PLUGIN_VERSION }}"
