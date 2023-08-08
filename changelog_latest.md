@@ -1,1 +1,1 @@
-1. Added expiration verification for JWT in Portainer
+1. Update the JWT identity storage of the Portainer
