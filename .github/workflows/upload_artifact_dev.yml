@@ -1,9 +1,9 @@
-name: Build New Version for Dev
+name: Build New Version For Dev
 
 on: workflow_dispatch
 
 jobs:
-  Build_New_Version_for_Dev:
+  Build_New_Version_For_Dev:
     runs-on: ubuntu-latest
     env:
       CI: false
@@ -44,7 +44,7 @@ jobs:
         if: success()
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
-          commit_message: Build Plugin and Upload Artifact for Dev
+          commit_message: Build Plugin For Dev
           
       - name: Create Zip Archive
         if: success()
