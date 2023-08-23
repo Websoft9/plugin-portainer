@@ -1,1 +1,1 @@
-1. Optimize authentication methods
+1. Fix some known bugs

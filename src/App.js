@@ -29,9 +29,10 @@ function App() {
   }
 
   //验证JWT是否过期
-  function isTokenExpired(token) {
+  async function isTokenExpired(token) {
     const decodedToken = jwt_decode(token);
-    const currentTime = Math.floor(Date.now() / 1000);
+    const currentTime = await cockpit.spawn(["date", "+%s"]);
+    //const currentTime = Math.floor(Date.now() / 1000);
     return decodedToken.exp < currentTime;
   }
 
