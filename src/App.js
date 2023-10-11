@@ -1,6 +1,7 @@
 import axios from 'axios';
 import "bootstrap/dist/css/bootstrap.min.css";
 import cockpit from 'cockpit';
+import ini from 'ini';
 import jwt_decode from 'jwt-decode';
 import { useEffect, useState } from "react";
 import { Alert } from 'react-bootstrap';
@@ -12,6 +13,7 @@ function App() {
   const [showAlert, setShowAlert] = useState(false);
   const [iframeKey, setIframeKey] = useState(Math.random());
   const [alertMessage, setAlertMessage] = useState("");
+  const [jwtLoaded, setJwtLoaded] = useState(false);
 
   const host = window.location.host;
   const baseURL = window.location.protocol + "//" + (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(host) ? host.split(":")[0] : host);
@@ -38,24 +40,36 @@ function App() {
 
   //获取Portainer JWT
   const getJwt = async () => {
-    let response = await cockpit.http({ "address": "websoft9-appmanage", "port": 5000 }).get("/AppSearchUsers", { "plugin_name": "portainer" });
-    response = JSON.parse(response);
-    if (response.ResponseData) {
-      var userName = response.ResponseData.user?.user_name;
-      var userPwd = response.ResponseData.user?.password;
+    var userName;
+    var userPwd;
+    cockpit.file('/data/websoft9/appmanage_new/src/config/config.ini').read().then(async (content) => {
+      const config = ini.parse(content);
+      userName = config.portainer.user_name
+      userPwd = config.portainer.user_pwd
 
-      const authResponse = await axios.post(baseURL + "/portainer/api/auth", {
+      if (!userName || !userPwd) {
+        setShowAlert(true);
+        setAlertMessage("Portainer Username or Password is empty.");
+        return;
+      }
+
+      const authResponse = await axios.post(baseURL + "/w9deployment/api/auth", {
         username: userName,
         password: userPwd,
-      });
+      }
+      );
       if (authResponse.status === 200) {
         const portainer_jwt = authResponse.data.jwt;
         document.cookie = "portainerJWT=" + portainer_jwt + ";path=/";
+        setJwtLoaded(true);
       } else {
         setShowAlert(true);
-        setAlertMessage("Request Portainer JWT Failed.");
+        setAlertMessage("Auth Portainer Error.");
       }
-    }
+    }).catch(error => {
+      setShowAlert(true);
+      setAlertMessage("Get Portainer Login Info Error.");
+    });
   }
 
   const getData = async () => {
@@ -73,7 +87,7 @@ function App() {
 
       setIframeKey(Math.random());
       var newHash = window.location.hash;
-      if (newHash.includes("/portainer/#!/")) {
+      if (newHash.includes("/w9deployment/#!/")) {
         var index = newHash.indexOf("#");
         if (index > -1) {
           var content = newHash.slice(index + 1);
@@ -81,7 +95,7 @@ function App() {
         }
       }
       else {
-        setIframeSrc(baseURL + "/portainer");
+        setIframeSrc(baseURL + "/w9deployment/");
       }
     }
     catch (error) {
@@ -92,7 +106,7 @@ function App() {
 
   const handleHashChange = () => {
     var newHash = window.location.hash;
-    if (newHash.includes("/portainer/#!/")) {
+    if (newHash.includes("/w9deployment/#!/")) {
       var index = newHash.indexOf("#");
       if (index > -1) {
         var content = newHash.slice(index + 1);
@@ -113,7 +127,7 @@ function App() {
 
   return (
     <>
-      {iframeKey && iframeSrc ? (
+      {iframeKey && iframeSrc && jwtLoaded ? (
         <div class="myPortainer">
           <iframe key={iframeKey} title="portainer" src={iframeSrc} />
         </div>
