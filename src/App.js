@@ -42,7 +42,7 @@ function App() {
   const getJwt = async () => {
     var userName;
     var userPwd;
-    cockpit.file('/data/websoft9/appmanage_new/src/config/config.ini').read().then(async (content) => {
+    cockpit.file('/var/lib/docker/volumes/websoft9_apphub_config/_data/config.ini').read().then(async (content) => {
       const config = ini.parse(content);
       userName = config.portainer.user_name
       userPwd = config.portainer.user_pwd
