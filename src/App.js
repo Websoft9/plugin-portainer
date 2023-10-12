@@ -40,12 +40,11 @@ function App() {
 
   //获取Portainer JWT
   const getJwt = async () => {
-    var userName;
-    var userPwd;
-    cockpit.file('/var/lib/docker/volumes/websoft9_apphub_config/_data/config.ini').read().then(async (content) => {
+    try {
+      const content = await cockpit.file('/var/lib/docker/volumes/websoft9_apphub_config/_data/config.ini').read();
       const config = ini.parse(content);
-      userName = config.portainer.user_name
-      userPwd = config.portainer.user_pwd
+      const userName = config.portainer.user_name;
+      const userPwd = config.portainer.user_pwd;
 
       if (!userName || !userPwd) {
         setShowAlert(true);
@@ -66,22 +65,28 @@ function App() {
         setShowAlert(true);
         setAlertMessage("Auth Portainer Error.");
       }
-    }).catch(error => {
+    }
+    catch (error) {
       setShowAlert(true);
-      setAlertMessage("Get Portainer Login Info Error.");
-    });
+      setAlertMessage("Auth Portainer Error.");
+    }
   }
 
-  const getData = async () => {
+  const autoLogin = async () => {
     try {
       const jwtToken = getCookieValue("portainerJWT");
+      alert(jwtToken);
       if (!jwtToken) {
         await getJwt();
       }
       else {
-        const isExpired = isTokenExpired(jwtToken);
+        const isExpired = await isTokenExpired(jwtToken);
+        alert(isExpired);
         if (isExpired) { //如果已经过期，重新生成JWT
           await getJwt();
+        }
+        else {
+          setJwtLoaded(true);
         }
       }
 
@@ -117,7 +122,7 @@ function App() {
   }
 
   useEffect(async () => {
-    await getData();
+    await autoLogin();
 
     window.addEventListener("hashchange", handleHashChange, true);
     return () => {
