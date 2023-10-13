@@ -75,13 +75,11 @@ function App() {
   const autoLogin = async () => {
     try {
       const jwtToken = getCookieValue("portainerJWT");
-      alert(jwtToken);
       if (!jwtToken) {
         await getJwt();
       }
       else {
         const isExpired = await isTokenExpired(jwtToken);
-        alert(isExpired);
         if (isExpired) { //如果已经过期，重新生成JWT
           await getJwt();
         }
