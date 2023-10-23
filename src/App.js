@@ -39,11 +39,12 @@ function App() {
   //获取Portainer JWT
   const getJwt = async () => {
     try {
-      var script_name = "docker exec -i websoft9-apphub apphub getconfig --section portainer --key user_name";
-      var script_pwd = "docker exec -i websoft9-apphub apphub getconfig --section portainer --key user_pwd";
+      var script = "docker exec -i websoft9-apphub apphub getconfig --section portainer";
+      let content = (await cockpit.spawn(["/bin/bash", "-c", script])).trim();
+      content = JSON.parse(content);
 
-      const userName = (await cockpit.spawn(["/bin/bash", "-c", script_name])).trim();
-      const userPwd = (await cockpit.spawn(["/bin/bash", "-c", script_pwd])).trim();
+      const userName = content.user_name;
+      const userPwd = content.user_pwd;
 
       if (!userName || !userPwd) {
         setShowAlert(true);
@@ -66,7 +67,7 @@ function App() {
     }
     catch (error) {
       setShowAlert(true);
-      setAlertMessage("Login Portainer Error." + error);
+      setAlertMessage("Login Portainer Error.");
     }
   }
 
