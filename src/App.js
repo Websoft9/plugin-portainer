@@ -1,7 +1,6 @@
 import axios from 'axios';
 import "bootstrap/dist/css/bootstrap.min.css";
 import cockpit from 'cockpit';
-import ini from 'ini';
 import jwt_decode from 'jwt-decode';
 import { useEffect, useState } from "react";
 import { Alert } from 'react-bootstrap';
@@ -34,17 +33,17 @@ function App() {
   async function isTokenExpired(token) {
     const decodedToken = jwt_decode(token);
     const currentTime = await cockpit.spawn(["date", "+%s"]);
-    //const currentTime = Math.floor(Date.now() / 1000);
-    return decodedToken.exp < currentTime;
+    return decodedToken.exp < currentTime + 3600;
   }
 
   //获取Portainer JWT
   const getJwt = async () => {
     try {
-      const content = await cockpit.file('/var/lib/docker/volumes/websoft9_apphub_config/_data/config.ini').read();
-      const config = ini.parse(content);
-      const userName = config.portainer.user_name;
-      const userPwd = config.portainer.user_pwd;
+      var script_name = "docker exec -i websoft9-apphub apphub getconfig --section portainer --key user_name";
+      var script_pwd = "docker exec -i websoft9-apphub apphub getconfig --section portainer --key user_pwd";
+
+      const userName = (await cockpit.spawn(["/bin/bash", "-c", script_name])).trim();
+      const userPwd = (await cockpit.spawn(["/bin/bash", "-c", script_pwd])).trim();
 
       if (!userName || !userPwd) {
         setShowAlert(true);
@@ -55,8 +54,7 @@ function App() {
       const authResponse = await axios.post(baseURL + "/w9deployment/api/auth", {
         username: userName,
         password: userPwd,
-      }
-      );
+      });
       if (authResponse.status === 200) {
         const portainer_jwt = authResponse.data.jwt;
         document.cookie = "portainerJWT=" + portainer_jwt + ";path=/";
@@ -68,7 +66,7 @@ function App() {
     }
     catch (error) {
       setShowAlert(true);
-      setAlertMessage("Auth Portainer Error.");
+      setAlertMessage("Login Portainer Error." + error);
     }
   }
 
