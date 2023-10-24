@@ -1,9 +1,13 @@
-name: Build New Version for Release
+name: Portainer Release
 
-on: workflow_dispatch
+on:
+  push:
+    branches: [main]
+    paths:
+      - "portainer.json"
 
 jobs:
-  Build_New_Version_for_Release:
+  Build_New_Version_For_Release:
     runs-on: ubuntu-latest
     env:
       CI: false
@@ -21,13 +25,22 @@ jobs:
 
       - name: Build
         run: yarn build
-        
+
       - name: Update CHANGELOG.md and public/manifest.json
         id: update_data
         run: |
           version=$(jq -r '.Version' portainer.json)
           echo "PLUGIN_VERSION=$version" >> $GITHUB_OUTPUT
-          
+          real_version=${version%%-*}
+          echo "VERSION=$real_version" >> $GITHUB_ENV
+          echo "RC_VERSION=$version" >> $GITHUB_ENV
+          if [[ $version == *-* ]]; then
+            echo "release version"
+            echo "::set-output name=release::false"
+          else
+            echo "rc release version"
+            echo "::set-output name=release::true"
+          fi                    
           changelog=$(cat changelog_latest.md)
           echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT 
           echo "$changelog" >> $GITHUB_OUTPUT 
@@ -41,38 +54,49 @@ jobs:
           mv manifest.json.tmp public/manifest.json
           
       - name: Commit and push changes
-        if: success()
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
-          commit_message: Build Plugin and Upload Artifact for Release
+          commit_message: Build Plugin For Release
           
-      - name: Create Release
-        if: success()
-        uses: softprops/action-gh-release@v1
-        with:
-          files: /* 
-          tag_name: v${{ steps.update_data.outputs.PLUGIN_VERSION }}   
-          body: ${{ steps.update_data.outputs.CHANGELOG }}
-          draft: false
-          prerelease: true
-
       - name: Create Zip Archive
-        if: success()
         run: |
           mkdir artifacts
-          mv build container
-          cp CHANGELOG.md container
-          cp portainer.json container
-          cp -r docs container
-          rsync -av --exclude='changelog_latest.md' *.md container/
-          zip -r portainer-${{ steps.update_data.outputs.PLUGIN_VERSION }}.zip container/
+          mv build portainer
+          cp CHANGELOG.md portainer
+          cp portainer.json portainer
+          cp -r docs portainer
+          rsync -av --exclude='changelog_latest.md' *.md portainer/
+          zip -r portainer-${{ env.VERSION }}.zip portainer/
           cp CHANGELOG.md artifacts/
           cp portainer.json artifacts/
-          mv portainer-${{ steps.update_data.outputs.PLUGIN_VERSION }}.zip artifacts/
+          mv portainer-${{ env.VERSION }}.zip artifacts/
+          cp artifacts/portainer-${{ env.VERSION }}.zip artifacts/portainer-latest.zip
 
       - name: Upload To Azure Blob
-        if: success()
         uses: LanceMcCarthy/Action-AzureBlobUpload@v2
+        if: ${{ steps.update_data.outputs.release == 'false' }}
+        with:
+          connection_string: ${{ secrets.AZURE_STORAGE_ARTIFACT }}
+          container_name: dev
+          source_folder: artifacts/
+          destination_folder: ./websoft9/plugin/portainer
+          delete_if_exists: true
+          fail_if_source_empty: true
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        if: ${{ steps.update_data.outputs.release == 'false' }}
+        with:
+          files: /*
+          tag_name: v${{ env.RC_VERSION }}
+          title: Release-v${{ env.RC_VERSION }}
+          body: ${{ steps.update_data.outputs.CHANGELOG }}
+          draft: false
+          prerelease: false
+
+      - name: Upload To Azure Blob
+        uses: LanceMcCarthy/Action-AzureBlobUpload@v2
+        if: ${{ steps.update_data.outputs.release == 'true' }}
         with:
           connection_string: ${{ secrets.AZURE_STORAGE_ARTIFACT }}
           container_name: release
@@ -80,3 +104,15 @@ jobs:
           destination_folder: ./websoft9/plugin/portainer
           delete_if_exists: true
           fail_if_source_empty: true
+
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        if: ${{ steps.update_data.outputs.release == 'true' }}
+        with:
+          files: /*
+          tag_name: v${{ env.VERSION }}
+          title: Release-v${{ env.VERSION }}
+          body: ${{ steps.update_data.outputs.CHANGELOG }}
+          draft: false
+          prerelease: false
