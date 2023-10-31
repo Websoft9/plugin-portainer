@@ -74,22 +74,10 @@ function App() {
   const autoLogin = async () => {
     try {
       await getJwt();
-      // const jwtToken = getCookieValue("portainerJWT");
-      // if (!jwtToken) {
-      //   await getJwt();
-      // }
-      // else {
-      //   const isExpired = await isTokenExpired(jwtToken);
-      //   if (isExpired) { //如果已经过期，重新生成JWT
-      //     await getJwt();
-      //   }
-      //   else {
-      //     setJwtLoaded(true);
-      //   }
-      // }
 
       setIframeKey(Math.random());
       var newHash = window.location.hash;
+      console.log("newHash:" + newHash);
       if (newHash.includes("/w9deployment/#!/")) {
         var index = newHash.indexOf("#");
         if (index > -1) {
@@ -109,6 +97,7 @@ function App() {
 
   const handleHashChange = () => {
     var newHash = window.location.hash;
+    console.log("Hash:" + newHash);
     if (newHash.includes("/w9deployment/#!/")) {
       var index = newHash.indexOf("#");
       if (index > -1) {
