@@ -77,7 +77,6 @@ function App() {
 
       setIframeKey(Math.random());
       var newHash = window.location.hash;
-      console.log("newHash:" + newHash);
       if (newHash.includes("/w9deployment/#!/")) {
         var index = newHash.indexOf("#");
         if (index > -1) {
@@ -97,7 +96,6 @@ function App() {
 
   const handleHashChange = () => {
     var newHash = window.location.hash;
-    console.log("Hash:" + newHash);
     if (newHash.includes("/w9deployment/#!/")) {
       var index = newHash.indexOf("#");
       if (index > -1) {
