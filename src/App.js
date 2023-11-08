@@ -1,7 +1,6 @@
 import axios from 'axios';
 import "bootstrap/dist/css/bootstrap.min.css";
 import cockpit from 'cockpit';
-import jwt_decode from 'jwt-decode';
 import { useEffect, useState } from "react";
 import { Alert } from 'react-bootstrap';
 import Spinner from 'react-bootstrap/Spinner';
@@ -14,27 +13,7 @@ function App() {
   const [alertMessage, setAlertMessage] = useState("");
   const [jwtLoaded, setJwtLoaded] = useState(false);
 
-  const host = window.location.host;
-  const baseURL = window.location.protocol + "//" + (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(host) ? host.split(":")[0] : host);
-
-  //获取cookie
-  function getCookieValue(cookieName) {
-    const cookies = document.cookie.split('; ');
-    for (const cookie of cookies) {
-      const [name, value] = cookie.split('=');
-      if (name === cookieName) {
-        return decodeURIComponent(value);
-      }
-    }
-    return null; // 如果没有找到该 Cookie 返回 null
-  }
-
-  //验证JWT是否过期
-  async function isTokenExpired(token) {
-    const decodedToken = jwt_decode(token);
-    const currentTime = await cockpit.spawn(["date", "+%s"]);
-    return decodedToken.exp < currentTime + 3600;
-  }
+  const baseURL = `${window.location.protocol}//${window.location.hostname}`;
 
   //获取Portainer JWT
   const getJwt = async () => {
@@ -110,6 +89,7 @@ function App() {
     await autoLogin();
 
     window.addEventListener("hashchange", handleHashChange, true);
+
     return () => {
       window.removeEventListener("hashchange", handleHashChange, true);
     };

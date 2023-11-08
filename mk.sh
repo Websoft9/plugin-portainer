@@ -1,3 +1,3 @@
 #!/bin/bash
-yarn build && cp -r ./build/* /usr/share/cockpit/container/
+yarn build && cp -r ./build/* /usr/share/cockpit/portainer/
 
