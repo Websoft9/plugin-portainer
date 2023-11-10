@@ -19,7 +19,7 @@ function App() {
   const getJwt = async () => {
     try {
       var script = "docker exec -i websoft9-apphub apphub getconfig --section portainer";
-      let content = (await cockpit.spawn(["/bin/bash", "-c", script])).trim();
+      let content = (await cockpit.spawn(["/bin/bash", "-c", script], { superuser: "try" })).trim();
       content = JSON.parse(content);
 
       const userName = content.user_name;
@@ -46,7 +46,16 @@ function App() {
     }
     catch (error) {
       setShowAlert(true);
-      setAlertMessage("Login Portainer Error.");
+      const errorText = [error.problem, error.reason, error.message]
+        .filter(item => typeof item === 'string')
+        .join(' ');
+
+      if (errorText.includes("permission denied")) {
+        setAlertMessage("Permission denied.");
+      }
+      else {
+        setAlertMessage(errorText || "Login Portainer Error.");
+      }
     }
   }
 
