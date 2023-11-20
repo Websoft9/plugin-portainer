@@ -4,14 +4,18 @@
 
 **Frontend**  
 
-- ui: react-bootstrap, classnames
+- ui: [react-bootstrap](https://react-bootstrap.github.io/)
 - js framework: [Create React App](https://create-react-app.dev/docs/documentation-intro)
 - template: no use
 
 **Backend API**  
 
-- apphub: Portainer API is used to provide service for the apphub, such as start,stop,and delete the installed applications.
+- portainer: Automatic login to Portainer
 - cockpit: this is for running command at host machine
+
+Related classes:
+
+- src/App.js
 
 
 ## Build and Test
