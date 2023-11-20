@@ -5,8 +5,9 @@
 
 # Websoft9 Plugin - `portainer`
 
-This plugin is the entrance to portainer service, it is used to manage installed applications.
-![image](https://github.com/Websoft9/plugin-portainer/assets/43192516/0f88c447-cde7-4b84-bdd4-f24f59075530)
+This plugin is the entrance to portainer service, it is used to manage installed applications and docker containers.
+![image](https://github.com/Websoft9/plugin-portainer/assets/43192516/9d1f3b26-1f93-40d1-8414-dfa903646681)
+
 
 ## Installation and update
 
