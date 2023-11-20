@@ -7,8 +7,7 @@
 
 This plugin is the entrance to portainer service, it is used to manage installed applications and docker containers.
 
-![image](https://github.com/Websoft9/plugin-portainer/assets/43192516/9d1f3b26-1f93-40d1-8414-dfa903646681)
-
+![image](https://github.com/Websoft9/plugin-portainer/assets/16741975/772eba54-32d9-45c5-8f89-9eb1fc2b8970)
 
 ## Installation and update
 
