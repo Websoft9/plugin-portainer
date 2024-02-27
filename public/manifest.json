@@ -2,7 +2,7 @@
   "version": "0.0.8",
   "menu": {
     "Portainer": {
-      "label": "Portainer",
+      "label": "Containers",
       "path": "index.html",
       "order": 2
     }
