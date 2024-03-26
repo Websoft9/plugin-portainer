@@ -1,3 +1,5 @@
+## 0.0.9-rc1 release on 2024-03-26
+1. Fix some known bugs
 ## 0.0.9 release on 2024-02-27
 1. Fix some known bugs
 ## 0.0.8 release on 2023-11-16
