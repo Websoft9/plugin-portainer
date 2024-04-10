@@ -37,7 +37,8 @@ function App() {
       });
       if (authResponse.status === 200) {
         const portainer_jwt = authResponse.data.jwt;
-        document.cookie = "portainerJWT=" + portainer_jwt + ";path=/";
+        // document.cookie = "portainerJWT=" + portainer_jwt + ";path=/";
+        document.cookie = "portainer_api_key=" + portainer_jwt + ";path=/";
         setJwtLoaded(true);
       } else {
         setShowAlert(true);
