@@ -53,6 +53,8 @@ function App() {
       });
 
       if (authResponse.status === 200) {
+        const portainer_jwt = authResponse.data.jwt;
+        document.cookie = "portainer_api_key=" + portainer_jwt + ";path=/";
         setJwtLoaded(true);
       } else {
         setShowAlert(true);
