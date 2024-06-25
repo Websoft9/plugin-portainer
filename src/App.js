@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import cockpit from 'cockpit';
 import { useCallback, useEffect, useState } from "react";
@@ -53,8 +53,6 @@ function App() {
       });
 
       if (authResponse.status === 200) {
-        const portainer_jwt = authResponse.data.jwt;
-        document.cookie = "portainer_api_key=" + portainer_jwt + ";path=/";
         setJwtLoaded(true);
       } else {
         setShowAlert(true);
