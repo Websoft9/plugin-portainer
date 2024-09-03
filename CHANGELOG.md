@@ -1,3 +1,5 @@
+## 0.1.2-rc1 release on 2024-09-03
+1. Fix some known bugs
 ## 0.1.1 release on 2024-05-10
 1. Fix some known bugs
 ## 0.1.1-rc1 release on 2024-05-08
