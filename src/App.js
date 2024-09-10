@@ -28,7 +28,18 @@ function App() {
       }
     } catch (error) {
       setShowAlert(true);
-      setAlertMessage("Get Nginx Listen Port Error:" + error.message || "Get Nginx Listen Port Error");
+      // setAlertMessage("Get Nginx Listen Port Error:" + error.message || "Get Nginx Listen Port Error");
+
+      const errorText = [error.problem, error.reason, error.message]
+        .filter(item => typeof item === 'string')
+        .join(' ');
+
+      if (errorText.includes("permission denied")) {
+        setAlertMessage("Your user does not have Docker permissions. Grant Docker permissions to this user by command: sudo usermod -aG docker <username>");
+      }
+      else {
+        setAlertMessage(errorText || "Get Nginx Listen Port Error");
+      }
     }
   }, []);
 
@@ -67,7 +78,7 @@ function App() {
         .join(' ');
 
       if (errorText.includes("permission denied")) {
-        setAlertMessage("Permission denied.");
+        setAlertMessage("Your user does not have Docker permissions. Grant Docker permissions to this user by command: sudo usermod -aG docker <username>");
       }
       else {
         setAlertMessage(errorText || "Login Portainer Error.");
