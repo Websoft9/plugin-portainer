@@ -1,3 +1,5 @@
+## 0.1.4-rc2 release on 2025-09-03
+1. Fix some known bugs
 ## 0.1.4-rc1 release on 2025-09-03
 1. Fix some known bugs
 ## 0.1.4 release on 2025-09-02
