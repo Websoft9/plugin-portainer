@@ -17,6 +17,24 @@ Your server must be have [Websoft9](https://github.com/Websoft9) installed.
 wget https://websoft9.github.io/websoft9/scripts/update_zip.sh && bash ./update_zip.sh --channel release --package_name "portainer-latest.zip" --sync_to "/usr/share/cockpit/portainer"
 ```
 
+## Security Considerations
+
+**Current Limitation**: Portainer credentials are retrieved client-side and briefly visible in browser DevTools during authentication. This is mitigated by:
+
+- **Cockpit authentication required**: Users must authenticate with Cockpit before accessing the plugin
+- **Local network usage**: Plugin is typically used in local/trusted networks, not exposed to public internet
+- **Planned improvement**: Story 4.4 will implement backend proxy to keep credentials server-side only
+
+**Recommendations**:
+- ✅ Use the plugin in trusted environments (local networks, VPNs)
+- ⚠️ Avoid using on shared/untrusted systems until backend proxy is implemented (Story 4.4)
+- ✅ Regularly rotate Portainer credentials for enhanced security
+
+**Session Management**:
+- JWT tokens are stored as cookies with 8-hour expiration
+- Automatic token refresh occurs 5 minutes before expiry
+- Graceful degradation: If SSO fails, users can manually login to Portainer
+
 ## Development
 
 See [Developer.md](docs/developer.md) for details about how to efficiently change the code, run, and test it.
