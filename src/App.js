@@ -2,10 +2,17 @@ import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import cockpit from 'cockpit';
 import jwtDecode from 'jwt-decode';
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert } from 'react-bootstrap';
 import Spinner from 'react-bootstrap/Spinner';
 import "./App.css";
+
+// Constants
+const TOKEN_MAX_AGE = 28800; // 8 hours in seconds
+const TOKEN_REFRESH_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
+const TOKEN_REFRESH_THRESHOLD = 5 * 60 * 1000; // Refresh 5 minutes before expiry
+const SSO_FAILURE_COUNTDOWN = 3; // seconds
+const COUNTDOWN_INTERVAL = 1000; // 1 second
 
 function App() {
   const [iframeSrc, setIframeSrc] = useState(null);
@@ -14,6 +21,10 @@ function App() {
   const [alertMessage, setAlertMessage] = useState("");
   const [listenPort, setListenPort] = useState(null);
   const [countdown, setCountdown] = useState(null); // For SSO failure countdown
+  
+  // Refs for cleanup
+  const countdownIntervalRef = useRef(null);
+  const countdownTimeoutRef = useRef(null);
 
   const getNginxConfig = useCallback(async () => {
     try {
@@ -62,25 +73,20 @@ function App() {
         password: userPwd,
       });
 
-      if (authResponse.status === 200) {
-        // Explicitly set JWT cookie for reliable authentication
-        const portainer_jwt = authResponse.data.jwt;
-        document.cookie = `portainer_jwt=${portainer_jwt}; path=/; SameSite=Strict; max-age=28800`;
-        // max-age=28800 = 8 hours (Portainer default token lifetime)
-        
-        // Track token expiry for auto-refresh
-        try {
-          const decoded = jwtDecode(portainer_jwt);
-          const expiryTime = decoded.exp * 1000; // Convert to milliseconds
-          sessionStorage.setItem('portainer_token_expiry', expiryTime);
-          console.log('Token expiry tracked:', new Date(expiryTime).toLocaleString());
-        } catch (decodeError) {
-          console.warn('Failed to decode JWT for expiry tracking:', decodeError);
-        }
-        return true; // Success
-      } else {
-        throw new Error("Auth Portainer Error.");
+      // Explicitly set JWT cookie for reliable authentication
+      const portainer_jwt = authResponse.data.jwt;
+      document.cookie = `portainer_jwt=${portainer_jwt}; path=/; SameSite=Strict; max-age=${TOKEN_MAX_AGE}`;
+      
+      // Track token expiry for auto-refresh (use localStorage for persistence)
+      try {
+        const decoded = jwtDecode(portainer_jwt);
+        const expiryTime = decoded.exp * 1000; // Convert to milliseconds
+        localStorage.setItem('portainer_token_expiry', expiryTime);
+        console.log('Token expiry tracked:', new Date(expiryTime).toLocaleString());
+      } catch (decodeError) {
+        console.warn('Failed to decode JWT for expiry tracking:', decodeError);
       }
+      return true; // Success
     } catch (error) {
       const errorText = [error.problem, error.reason, error.message]
         .filter(item => typeof item === 'string')
@@ -96,54 +102,59 @@ function App() {
 
 
   const autoLogin = useCallback(async (baseURL) => {
-    let ssoSuccess = false;
+    // Helper function to redirect to Portainer
+    const redirectToPortainer = () => {
+      setIframeKey(Math.random());
+      const newHash = window.location.hash;
+      if (newHash.includes("/w9deployment/#!/")) {
+        const index = newHash.indexOf("#");
+        if (index > -1) {
+          const content = newHash.slice(index + 1);
+          setIframeSrc(`${baseURL}${content}`);
+        }
+      } else {
+        setIframeSrc(`${baseURL}/w9deployment/`);
+      }
+    };
     
     try {
       // Attempt SSO authentication (best-effort)
       await getJwt(baseURL);
-      ssoSuccess = true;
+      // SSO success - redirect immediately
+      redirectToPortainer();
     } catch (error) {
       // Log error but DON'T block user from accessing Portainer
       console.warn('SSO authentication failed:', error);
-      ssoSuccess = false;
+      
+      // Clear previous timers if any
+      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+      if (countdownTimeoutRef.current) clearTimeout(countdownTimeoutRef.current);
       
       // Show countdown before redirecting to Portainer login page
       setShowAlert(true);
-      setCountdown(3);
-      setAlertMessage("Single Sign-On failed. Redirecting to Portainer login in 3 seconds...");
+      setCountdown(SSO_FAILURE_COUNTDOWN);
+      setAlertMessage(`Single Sign-On failed. Redirecting to Portainer login in ${SSO_FAILURE_COUNTDOWN} seconds...`);
       
       // Start countdown
-      let count = 3;
-      const countdownInterval = setInterval(() => {
+      let count = SSO_FAILURE_COUNTDOWN;
+      countdownIntervalRef.current = setInterval(() => {
         count -= 1;
         setCountdown(count);
         if (count > 0) {
           setAlertMessage(`Single Sign-On failed. Redirecting to Portainer login in ${count} second${count > 1 ? 's' : ''}...`);
         }
-      }, 1000);
+      }, COUNTDOWN_INTERVAL);
       
-      // Redirect after 3 seconds
-      setTimeout(() => {
-        clearInterval(countdownInterval);
-        setShowAlert(false); // Hide error after redirect
+      // Redirect after countdown
+      countdownTimeoutRef.current = setTimeout(() => {
+        if (countdownIntervalRef.current) {
+          clearInterval(countdownIntervalRef.current);
+          countdownIntervalRef.current = null;
+        }
+        setShowAlert(false);
         setCountdown(null);
-      }, 3000);
-    }
-    
-    // ALWAYS redirect to Portainer regardless of SSO result
-    // Wait for countdown to finish if SSO failed
-    await new Promise(resolve => setTimeout(resolve, ssoSuccess ? 0 : 3100));
-    
-    setIframeKey(Math.random());
-    const newHash = window.location.hash;
-    if (newHash.includes("/w9deployment/#!/")) {
-      const index = newHash.indexOf("#");
-      if (index > -1) {
-        const content = newHash.slice(index + 1);
-        setIframeSrc(`${baseURL}${content}`);
-      }
-    } else {
-      setIframeSrc(`${baseURL}/w9deployment/`);
+        redirectToPortainer();
+      }, SSO_FAILURE_COUNTDOWN * 1000);
     }
   }, [getJwt]);
 
@@ -188,7 +199,7 @@ function App() {
     if (!listenPort) return;
 
     const checkAndRefresh = () => {
-      const expiry = sessionStorage.getItem('portainer_token_expiry');
+      const expiry = localStorage.getItem('portainer_token_expiry');
       if (!expiry) {
         console.log('No token expiry tracked, skipping refresh check');
         return;
@@ -196,10 +207,9 @@ function App() {
       
       const now = Date.now();
       const expiryTime = Number(expiry);
-      const fiveMinutes = 5 * 60 * 1000;
       
-      // Refresh token if expiring within 5 minutes
-      if (now + fiveMinutes >= expiryTime) {
+      // Refresh token if expiring within threshold
+      if (now + TOKEN_REFRESH_THRESHOLD >= expiryTime) {
         console.log('Token expiring soon, refreshing...');
         const baseURL = `${window.location.protocol}//${window.location.hostname}:${listenPort}`;
         autoLogin(baseURL);
@@ -210,14 +220,22 @@ function App() {
       }
     };
     
-    // Check every 5 minutes
-    const interval = setInterval(checkAndRefresh, 5 * 60 * 1000);
+    // Check every interval
+    const interval = setInterval(checkAndRefresh, TOKEN_REFRESH_CHECK_INTERVAL);
     
     // Also check immediately on mount
     checkAndRefresh();
     
     return () => clearInterval(interval);
   }, [listenPort, autoLogin]);
+
+  // Cleanup countdown timers on unmount
+  useEffect(() => {
+    return () => {
+      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+      if (countdownTimeoutRef.current) clearTimeout(countdownTimeoutRef.current);
+    };
+  }, []);
 
   return (
     <>
@@ -235,7 +253,7 @@ function App() {
       )}
       
       {iframeKey && iframeSrc ? (
-        <div class="myPortainer">
+        <div className="myPortainer">
           <iframe key={iframeKey} title="portainer" src={iframeSrc} />
         </div>
       ) : (
